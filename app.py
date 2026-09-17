@@ -290,12 +290,12 @@ def main_app():
         st.subheader("⚙️ Subject & Venue Configuration")
 
         default_data = pd.DataFrame([
-            {"Subject": "Python Programming", "Teacher": "Dr. Sharma", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 4},
-            {"Subject": "Database Management System", "Teacher": "Prof. Verma", "Room/Lab": "Room 201", "Weekly Classes (Credits)": 4},
-            {"Subject": "Web Technologies", "Teacher": "Er. Gupta", "Room/Lab": "Lab 2", "Weekly Classes (Credits)": 3},
-            {"Subject": "Computer Networks", "Teacher": "Dr. Singh", "Room/Lab": "Room 202", "Weekly Classes (Credits)": 3},
-            {"Subject": "Software Engineering", "Teacher": "Prof. Khan", "Room/Lab": "Room 203", "Weekly Classes (Credits)": 3},
-            {"Subject": "Python Lab", "Teacher": "Dr. Sharma", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 2},
+            {"Subject": "Python Programming", "Teacher": "Dr. Raza Sir", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 4},
+            {"Subject": "Database Management System", "Teacher": "Prof. Kazmi Sir", "Room/Lab": "Room 201", "Weekly Classes (Credits)": 4},
+            {"Subject": "Web Technologies", "Teacher": "Er. Saurabh Sir", "Room/Lab": "Lab 2", "Weekly Classes (Credits)": 3},
+            {"Subject": "Computer Networks", "Teacher": "Dr. Muskan Ma'am", "Room/Lab": "Room 202", "Weekly Classes (Credits)": 3},
+            {"Subject": "Software Engineering", "Teacher": "Prof. Rakesh Sir", "Room/Lab": "Room 203", "Weekly Classes (Credits)": 3},
+            {"Subject": "Python Lab", "Teacher": "Dr. Farzan Sir", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 2},
         ])
 
         edited_df = st.data_editor(default_data, num_rows="dynamic", use_container_width=True, key="subject_editor_v6")
