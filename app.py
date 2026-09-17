@@ -1,0 +1,357 @@
+import json
+import os
+import random
+import pandas as pd
+import streamlit as st
+
+# 1. Page Configuration
+st.set_page_config(
+    page_title="AI Timetable Studio Ultra",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 2. Database Handling
+DB_FILE = "users_db.json"
+
+def load_users():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"admin": {"password": "admin123", "name": "Admin User", "role": "Faculty Leader"}}
+
+def save_users(db):
+    with open(DB_FILE, "w") as f:
+        json.dump(db, f, indent=4)
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "user_info" not in st.session_state:
+    st.session_state.user_info = {}
+if "users_db" not in st.session_state:
+    st.session_state.users_db = load_users()
+
+if "attendance_data" not in st.session_state:
+    st.session_state.attendance_data = pd.DataFrame([
+        {"Subject": "Python Programming", "Classes Attended": 28, "Total Classes": 32},
+        {"Subject": "Database Management System", "Classes Attended": 22, "Total Classes": 30},
+        {"Subject": "Web Technologies", "Classes Attended": 25, "Total Classes": 26},
+        {"Subject": "Computer Networks", "Classes Attended": 18, "Total Classes": 28},
+        {"Subject": "Software Engineering", "Classes Attended": 24, "Total Classes": 25},
+    ])
+
+if "assignment_data" not in st.session_state:
+    st.session_state.assignment_data = pd.DataFrame([
+        {"Subject": "Python Programming", "Assignment Title": "Custom Class & OOP Design", "Due Date": "2026-08-15", "Status": "Submitted", "Marks Obtained": "18/20"},
+        {"Subject": "Database Management System", "Assignment Title": "ER Diagram & Normalization", "Due Date": "2026-08-18", "Status": "Pending", "Marks Obtained": "N/A"},
+        {"Subject": "Web Technologies", "Assignment Title": "Responsive Portfolio with Flexbox", "Due Date": "2026-08-20", "Status": "Submitted", "Marks Obtained": "19/20"},
+        {"Subject": "Computer Networks", "Assignment Title": "Subnetting & IP Configuration", "Due Date": "2026-08-22", "Status": "Pending", "Marks Obtained": "N/A"},
+    ])
+
+# Image URLs (Aap chahein toh local path e.g. "login_bg.jpg" aur "dashboard_bg.jpg" bhi use kar sakte hain)
+LOGIN_BG_IMAGE = "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1920&auto=format&fit=crop"
+DASHBOARD_BG_IMAGE = "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=1920&auto=format&fit=crop"
+
+# 3. Timetable Logic Engine
+class TimetableAgent:
+    def __init__(self, days, time_slots, lunch_slot="12:00 PM - 01:00 PM"):
+        self.days = days
+        self.time_slots = time_slots
+        self.lunch_slot = lunch_slot
+
+    def generate_timetable(self, subjects_info, max_classes_per_day=4, avoid_consecutive=True):
+        timetable = {day: {slot: "Free" for slot in self.time_slots} for day in self.days}
+        pool = []
+        for sub in subjects_info:
+            for _ in range(sub['credits']):
+                pool.append(sub)
+
+        random.shuffle(pool)
+
+        for day in self.days:
+            if self.lunch_slot in self.time_slots:
+                timetable[day][self.lunch_slot] = "🍱 LUNCH BREAK"
+
+            daily_count = 0
+            for slot in self.time_slots:
+                if slot == self.lunch_slot:
+                    continue
+
+                if daily_count >= max_classes_per_day:
+                    timetable[day][slot] = "⚡ Self Study / Free"
+                    continue
+
+                assigned = False
+                for idx, item in enumerate(pool):
+                    subject_name = item['name']
+                    teacher_name = item['teacher']
+                    room_name = item.get('room', 'Room 101')
+
+                    if avoid_consecutive:
+                        prev_slot_idx = self.time_slots.index(slot) - 1
+                        if prev_slot_idx >= 0:
+                            prev_slot = self.time_slots[prev_slot_idx]
+                            if subject_name in str(timetable[day][prev_slot]):
+                                continue
+
+                    timetable[day][slot] = f"📖 {subject_name}\n👨‍🏫 {teacher_name}\n📍 {room_name}"
+                    pool.pop(idx)
+                    daily_count += 1
+                    assigned = True
+                    break
+
+                if not assigned and timetable[day][slot] == "Free":
+                    timetable[day][slot] = "📚 Library Session"
+
+        return pd.DataFrame(timetable)
+
+# 4. Cyber Login Page (Hacker Background)
+def login_page():
+    # Inject Login Background
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background: linear-gradient(rgba(5, 10, 25, 0.82), rgba(5, 10, 25, 0.88)), url("{LOGIN_BG_IMAGE}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #e0f7fc;
+        }}
+
+        @keyframes neonGlow {{
+            0%, 100% {{ text-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff; }}
+            50% {{ text-shadow: 0 0 15px #00f3ff, 0 0 30px #00f3ff, 0 0 45px #00f3ff; }}
+        }}
+
+        .cyber-title {{
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2.8rem;
+            font-weight: 800;
+            text-align: center;
+            color: #00f3ff;
+            animation: neonGlow 2.5s infinite alternate;
+            margin-bottom: 5px;
+        }}
+
+        .cyber-subtitle {{
+            text-align: center;
+            color: #00f3ff;
+            font-family: monospace;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+        }}
+
+        div[data-testid="stColumn"] > div {{
+            background: rgba(10, 20, 40, 0.75) !important;
+            border: 1px solid rgba(0, 243, 255, 0.4) !important;
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }}
+
+        .stTextInput input, .stSelectbox div {{
+            background-color: rgba(5, 12, 25, 0.85) !important;
+            color: #00f3ff !important;
+            border: 1px solid #00f3ff !important;
+            border-radius: 6px !important;
+        }}
+
+        .stButton>button {{
+            background: linear-gradient(90deg, #00f3ff 0%, #0066ff 100%) !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            border: none !important;
+            border-radius: 6px !important;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        st.markdown('<div class="cyber-title">SECURITY ACCESS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="cyber-subtitle">[ SYSTEM AUTHENTICATION PROTOCOL ]</div>', unsafe_allow_html=True)
+
+        auth_mode = st.radio("Access Level", ["🔐 LOGIN", "📝 REGISTER SYSTEM"], horizontal=True)
+
+        if auth_mode == "🔐 LOGIN":
+            username = st.text_input("USER IDENTIFIER")
+            password = st.text_input("PASSCODE", type="password")
+
+            if st.button("🚀 INITIALIZE LOGIN", use_container_width=True):
+                users = st.session_state.users_db
+                if username in users and users[username]["password"] == password:
+                    st.session_state.authenticated = True
+                    st.session_state.user_info = {
+                        "username": username,
+                        "name": users[username].get("name", username),
+                        "role": users[username].get("role", "Student")
+                    }
+                    st.success("AUTHENTICATION SUCCESSFUL")
+                    st.rerun()
+                else:
+                    st.error("❌ ACCESS DENIED: Invalid Credentials")
+
+        else:
+            new_name = st.text_input("FULL NAME")
+            new_username = st.text_input("NEW USERNAME")
+            new_password = st.text_input("NEW PASSCODE", type="password")
+            role = st.selectbox("ASSIGN ROLE", ["Student", "Faculty Member", "Administrator"])
+
+            if st.button("✨ REGISTER USER TO DATABASE", use_container_width=True):
+                if new_username in st.session_state.users_db:
+                    st.warning("⚠️ IDENTIFIER ALREADY EXISTS")
+                elif new_username and new_password:
+                    st.session_state.users_db[new_username] = {
+                        "password": new_password,
+                        "name": new_name,
+                        "role": role
+                    }
+                    save_users(st.session_state.users_db)
+                    st.success("🎉 USER REGISTERED & SAVED TO DATABASE")
+                else:
+                    st.error("PLEASE FILL ALL REQUIRED FIELDS")
+
+# 5. Main Dashboard App (Programmer Setup Background)
+def main_app():
+    # Inject Dashboard Programmer Background
+    st.markdown(f"""
+        <style>
+        .stApp {{
+            background: linear-gradient(rgba(10, 15, 30, 0.88), rgba(10, 15, 30, 0.92)), url("{DASHBOARD_BG_IMAGE}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #f1f5f9;
+        }}
+
+        /* Table & Data Editors readability overlay */
+        div[data-testid="stSidebar"] {{
+            background-color: rgba(15, 23, 42, 0.85) !important;
+            backdrop-filter: blur(10px);
+        }}
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.sidebar.markdown(f"**OPERATOR:** {st.session_state.user_info.get('name')} | `{st.session_state.user_info.get('role')}`")
+    
+    if st.sidebar.button("🔴 TERMINATE SESSION"):
+        st.session_state.authenticated = False
+        st.session_state.user_info = {}
+        st.rerun()
+
+    st.sidebar.title("🎛️ AI CONTROLS")
+
+    shift_mode = st.sidebar.radio("⏰ OPERATING SHIFT", ["Morning Shift (9 AM - 4 PM)", "Afternoon Shift (11 AM - 6 PM)"])
+
+    if "Morning" in shift_mode:
+        time_slots = [
+            "09:00 AM - 10:00 AM", "10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM",
+            "12:00 PM - 01:00 PM", "01:00 PM - 02:00 PM", "02:00 PM - 03:00 PM", "03:00 PM - 04:00 PM"
+        ]
+        default_lunch = "12:00 PM - 01:00 PM"
+    else:
+        time_slots = [
+            "11:00 AM - 12:00 PM", "12:00 PM - 01:00 PM", "01:00 PM - 02:00 PM",
+            "02:00 PM - 03:00 PM", "04:00 PM - 05:00 PM", "05:00 PM - 06:00 PM"
+        ]
+        default_lunch = "02:00 PM - 03:00 PM"
+
+    lunch_break_slot = st.sidebar.selectbox("🍱 LUNCH SLOT", time_slots, index=time_slots.index(default_lunch))
+    max_classes = st.sidebar.slider("🔥 MAX CLASSES / DAY", min_value=2, max_value=6, value=4)
+
+    avoid_consecutive = st.sidebar.toggle("Avoid Back-to-Back Same Subject", value=True)
+    include_saturday = st.sidebar.toggle("Include Saturday Classes", value=True)
+
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    if include_saturday:
+        days.append("Saturday")
+
+    st.title("⚡ AI TIMETABLE & STUDENT MANAGEMENT STUDIO")
+    st.divider()
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        "📋 Subject Setup", 
+        "🗓️ AI Timetable Matrix", 
+        "📊 Workload Analytics", 
+        "✅ Attendance Tracker", 
+        "📝 Assignment Hub"
+    ])
+
+    with tab1:
+        st.subheader("⚙️ Subject & Venue Configuration")
+
+        default_data = pd.DataFrame([
+            {"Subject": "Python Programming", "Teacher": "Dr. Sharma", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 4},
+            {"Subject": "Database Management System", "Teacher": "Prof. Verma", "Room/Lab": "Room 201", "Weekly Classes (Credits)": 4},
+            {"Subject": "Web Technologies", "Teacher": "Er. Gupta", "Room/Lab": "Lab 2", "Weekly Classes (Credits)": 3},
+            {"Subject": "Computer Networks", "Teacher": "Dr. Singh", "Room/Lab": "Room 202", "Weekly Classes (Credits)": 3},
+            {"Subject": "Software Engineering", "Teacher": "Prof. Khan", "Room/Lab": "Room 203", "Weekly Classes (Credits)": 3},
+            {"Subject": "Python Lab", "Teacher": "Dr. Sharma", "Room/Lab": "Lab 1", "Weekly Classes (Credits)": 2},
+        ])
+
+        edited_df = st.data_editor(default_data, num_rows="dynamic", use_container_width=True, key="subject_editor_v6")
+
+        subjects_list = [row for _, row in edited_df.iterrows() if row["Subject"] and row["Teacher"]]
+        total_credits = sum([int(s["Weekly Classes (Credits)"]) for s in subjects_list]) if subjects_list else 0
+
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Active Subjects", len(subjects_list))
+        c2.metric("Weekly Classes Required", total_credits)
+        c3.metric("Assigned Faculty", len(set([s["Teacher"] for s in subjects_list])) if subjects_list else 0)
+
+        if st.button("🚀 GENERATE AI SCHEDULE", type="primary", use_container_width=True):
+            subjects_info = [
+                {
+                    "name": str(r["Subject"]),
+                    "teacher": str(r["Teacher"]),
+                    "room": str(r.get("Room/Lab", "Room 101")),
+                    "credits": int(r["Weekly Classes (Credits)"])
+                }
+                for r in subjects_list
+            ]
+            agent = TimetableAgent(days, time_slots, lunch_slot=lunch_break_slot)
+            timetable_df = agent.generate_timetable(
+                subjects_info, 
+                max_classes_per_day=max_classes,
+                avoid_consecutive=avoid_consecutive
+            )
+            st.session_state["timetable_df"] = timetable_df
+            st.session_state["subjects_list"] = subjects_list
+            st.toast("🎉 AI Timetable Generated!")
+
+    with tab2:
+        if "timetable_df" in st.session_state:
+            st.subheader("🗓️ Schedule Grid")
+            st.dataframe(st.session_state["timetable_df"], use_container_width=True)
+        else:
+            st.info("👉 Tab 1 se Pehle Timetable Generate karein.")
+
+    with tab3:
+        if "timetable_df" in st.session_state:
+            st.subheader("📊 Workload Metrics")
+            st.write("Schedule Data Loaded.")
+        else:
+            st.info("👉 Generate Schedule to view analytics.")
+
+    with tab4:
+        st.subheader("✅ Attendance Tracker")
+        st.data_editor(st.session_state.attendance_data, num_rows="dynamic", use_container_width=True)
+
+    with tab5:
+        st.subheader("📝 Assignment Records")
+        st.data_editor(st.session_state.assignment_data, num_rows="dynamic", use_container_width=True)
+
+# 6. Entry Point
+if not st.session_state.authenticated:
+    login_page()
+else:
+    main_app()

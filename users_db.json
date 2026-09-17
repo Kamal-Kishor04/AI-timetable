@@ -1,0 +1,12 @@
+{
+    "admin": {
+        "password": "admin123",
+        "name": "Admin User",
+        "role": "Faculty Leader"
+    },
+    "Kamal04": {
+        "password": "Kamal@123",
+        "name": "Kamal Kishor Tiwari",
+        "role": "Student"
+    }
+}
